@@ -9,7 +9,9 @@
 
 # LICENSE: GPL v2
 
-import sys, struct, datetime, binascii
+import sys
+import datetime
+import binascii
 
 
 # HASH of flag attributes
@@ -47,7 +49,7 @@ file_hash[12][1] = "TARGET OFFLINE"
 file_hash[13][1] = "NOT_CONTENT_INDEXED"
 file_hash[14][1] = "ENCRYPTED"
 
-#Hash of ShowWnd values
+# Hash of ShowWnd values
 show_wnd_hash = [[""] for _ in xrange(11)]
 show_wnd_hash[0] = "SW_HIDE"
 show_wnd_hash[1] = "SW_NORMAL"
@@ -72,10 +74,10 @@ vol_type_hash[5] = "CD-ROM"
 vol_type_hash[6] = "RAM Drive"
 
 
-def reverse_hex(HEXDATE):
-    hexVals = [HEXDATE[i:i + 2] for i in xrange(0, 16, 2)]
-    reversedHexVals = hexVals[::-1]
-    return ''.join(reversedHexVals)
+def reverse_hex(hexdate):
+    hex_vals = [hexdate[i:i + 2] for i in xrange(0, 16, 2)]
+    reversed_hex_vals = hex_vals[::-1]
+    return ''.join(reversed_hex_vals)
 
 
 def assert_lnk_signature(f):
@@ -168,8 +170,7 @@ def add_info(f, loc):
 
 def parse_lnk(filename, f):
     # Dictionary for storing all of the LNK's attributes
-    lnk_info = {}
-    lnk_info['filename'] = filename
+    lnk_info = {'filename': filename}
 
     assert_lnk_signature(f)
 
@@ -243,7 +244,7 @@ def parse_lnk(filename, f):
     list_end = 78 + items
 
     struct_start = list_end
-    first_off_off = struct_start + 4
+    # first_off_off = struct_start + 4
     vol_flags_off = struct_start + 8
     local_vol_off = struct_start + 12
     base_path_off = struct_start + 16
@@ -256,7 +257,7 @@ def parse_lnk(filename, f):
     struct_end = struct_start + struct_len
 
     # First offset after struct - Should be 1C under normal circumstances
-    first_off = read_unpack(f, first_off_off, 1)
+    # first_off = read_unpack(f, first_off_off, 1)
 
     # File location flags
     vol_flags = read_unpack_bin(f, vol_flags_off, 1)
@@ -320,8 +321,8 @@ def parse_lnk(filename, f):
 
         net_vol_off_hex = reverse_hex(read_unpack(f, net_vol_off, 4))
         net_vol_off = struct_start + int(net_vol_off_hex, 16)
-        net_vol_len_hex = reverse_hex(read_unpack(f, net_vol_off, 4))
-        #net_vol_len = struct_start + int(net_vol_len_hex, 16)
+        # net_vol_len_hex = reverse_hex(read_unpack(f, net_vol_off, 4))
+        # net_vol_len = struct_start + int(net_vol_len_hex, 16)
 
         # Network Share Name
         net_share_name_off = net_vol_off + 8
@@ -361,7 +362,6 @@ def parse_lnk(filename, f):
 
     # The next starting location is the end of the structure
     next_loc = struct_end
-    addnl_text = ""
 
     if flags[2] == "1":
         addnl_text, next_loc = add_info(f, next_loc)
@@ -370,22 +370,26 @@ def parse_lnk(filename, f):
             
     if flags[3] == "1":
         addnl_text, next_loc = add_info(f, next_loc)
-        lnk_info['relative_path'] = addnl_text.decode('utf-16be', errors='ignore')
+        lnk_info['relative_path'] = addnl_text.decode(
+            'utf-16be', errors='ignore')
         next_loc += 1
 
     if flags[4] == "1":
         addnl_text, next_loc = add_info(f, next_loc)
-        lnk_info['working_dir'] = addnl_text.decode('utf-16be', errors='ignore')
+        lnk_info['working_dir'] = addnl_text.decode(
+            'utf-16be', errors='ignore')
         next_loc += 1
 
     if flags[5] == "1":
         addnl_text, next_loc = add_info(f, next_loc)
-        lnk_info['command_line'] = addnl_text.decode('utf-16be', errors='ignore')
+        lnk_info['command_line'] = addnl_text.decode(
+            'utf-16be', errors='ignore')
         next_loc += 1
             
     if flags[6] == "1":
         addnl_text, next_loc = add_info(f, next_loc)
-        lnk_info['icon_filename'] = addnl_text.decode('utf-16be', errors='ignore')
+        lnk_info['icon_filename'] = addnl_text.decode(
+            'utf-16be', errors='ignore')
     
     return lnk_info
 
@@ -417,7 +421,8 @@ def format_output(lnk_info):
         if 'mapped_drive' in lnk_info:
             output += "Mapped Drive: %s\n" % lnk_info['mapped_drive']
         
-    output += "(App Path:) Remaining Path: "+str(lnk_info['remaining_path']) + "\n"
+    output += "(App Path:) Remaining Path: "+str(
+        lnk_info['remaining_path']) + "\n"
     
     # The following are optional fields:
     if 'description' in lnk_info:
@@ -439,13 +444,14 @@ def usage():
     sys.exit(1)
 
 
-if __name__ == "__main__":
-    
+def main():
     if len(sys.argv) != 2:
         usage()
-        
+
     filename = sys.argv[1]
-    
     with open(filename, 'rb') as f:
         lnk_info = parse_lnk(filename, f)
         print format_output(lnk_info)
+
+if __name__ == "__main__":
+    main()
